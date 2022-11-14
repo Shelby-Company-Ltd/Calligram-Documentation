@@ -1,0 +1,174 @@
+openapi: "3.0.1"
+info:
+  version: 0.1.0
+  title: Calligram API
+  termsOfService: "https://www.calligram.io/policies/privacy"
+  contact:
+    name: Nico Bautista Hobin
+    email: nico@calligram.io
+  x-logo:
+    url: "https://raw.githubusercontent.com/Shelby-Company-Ltd/Calligram-Documentation/main/logo.png"
+    backgroundColor: "#FFFFFF"
+    altText: "Calligram logo"
+  description: >-
+    ## Calligram API: natural language API search and interfacing as a service.
+
+    Calligram provides an API that exposes functionality for using natural
+    language to interface with any REST API. For examples and helper, code
+    see [Calligram Documentation](https://github.com/Shelby-Company-Ltd/Calligram-Documentation).
+servers:
+  - url: "https://y7xqsccv49.execute-api.us-west-1.amazonaws.com/production"
+paths:
+  /map:
+    post:
+      summary: Map Parameters
+      description: Return a map of specified API parameter ids to extracted values from an arbitrary natural language query.
+      operationId: postMapParametersRequest
+      security:
+        - api_key: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/response200"
+        "400":
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/response400"
+        "403":
+          description: API key information is missing or invalid.
+        "5XX":
+          description: Unexpected error.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/request"
+        description: A map parameters endpoint request body consisting of a list of API parameter objects and a natural language query.
+        required: true
+components:
+  securitySchemes:
+    api_key:
+      type: "apiKey"
+      name: "x-api-key"
+      in: "header"
+  schemas:
+    response200:
+      type: object
+      description: A map parameters endpoint 200 response.
+      properties:
+        success:
+          type: boolean
+          description: Whether or not the request completed successfully.
+        requestId:
+          type: integer
+          description: The allocated request id.
+        result:
+          type: object
+          description: The generated map of API parameter ids to values extracted from the natural language query.
+    response400:
+      type: object
+      description: A map parameters endpoint 400 response.
+      properties:
+        success:
+          type: boolean
+          description: Whether or not the request completed successfully.
+        message:
+          type: string
+          description: The error message.
+    request:
+      type: object
+      description: A map parameters endpoint request.
+      properties:
+        query:
+          description: A natural language query.
+          type: string
+        description:
+          description: A natural language description of the endpoint for which parameters are being generated.
+          type: string
+        parameters:
+          description: A list of API parameters to parse from the request.
+          type: array
+          items:
+            $ref: "#/components/schemas/parameter"
+      required:
+        - query
+        - description
+        - parameters
+    parameter:
+      type: object
+      description: An API request parameter object.
+      properties:
+        id:
+          type: string
+          description: The API parameter id.
+        description:
+          type: string
+          description: The API parameter description.
+        example:
+          type: string
+          description: An example value of the API parameter.
+        requires:
+          type: array
+          description: A list of any other API parameters that must be parsed if this parameter is parsed.
+          items:
+            type: string
+        excludes:
+          type: array
+          description: A list of any other API parameters that must not be parsed if this parameter is parsed.
+          items:
+            type: string
+        values:
+          type: array
+          description: In case an API parameter can only take on a set of values, the full enumeration of possible values. All enumeration values must be of the same type. If the enumeration values are simple types (not objects), `Map Parameters` will return one of the provided values. If the enumeration values are objects, `Map Parameters` will return the id of the selected enumeration value.
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/simpleEnumerationValue"
+              - $ref: "#/components/schemas/mappedEnumerationValue"
+              - $ref: "#/components/schemas/taxonomicEnumerationValue"
+      required:
+        - id
+        - description
+    simpleEnumerationValue:
+      type:
+        - number
+        - string
+        - boolean
+        - "null"
+      description: A valid simple enumeration value for an API parameter.
+    mappedEnumerationValue:
+      type: object
+      description: A valid mapped enumeration value for an API parameter.
+      properties:
+        id:
+          type: string
+          description: The id of the API parameter enumeration value.
+        description:
+          type: string
+          description: The API parameter enumeration value description .
+      required:
+        - id
+        - description
+    taxonomicEnumerationValue:
+      type: object
+      description: A valid taxonomic enumeration value for an API parameter.
+      properties:
+        id:
+          type: string
+          description: The id of the API parameter enumeration value.
+        description:
+          type: string
+          description: The API parameter enumeration value description. If id is self descriptive, description should have the same value.
+        parents:
+          type: array
+          description: The ids of the parents enumeration values of the API parameter enumeration value.
+          items:
+            type: string
+      required:
+        - id
+        - description
+        - parents

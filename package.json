@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "snippet-enricher-cli": "^0.0.8"
+  }
+}
