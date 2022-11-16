@@ -76,6 +76,7 @@ components:
       properties:
         success:
           type: boolean
+          example: false
           description: Whether or not the request completed successfully.
         message:
           type: string
@@ -110,7 +111,10 @@ components:
           type: string
           description: The API parameter description.
         example:
-          type: string
+          type:
+            - number
+            - string
+            - boolean
           description: An example value of the API parameter.
         requires:
           type: array
