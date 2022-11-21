@@ -16,13 +16,30 @@ info:
     Calligram provides an API that exposes functionality for using natural
     language to interface with any REST API. For examples and helper, code
     see [Calligram Documentation](https://github.com/Shelby-Company-Ltd/Calligram-Documentation).
+
+    Please note that the Map Parameters endpoint makes heavy use of caching. So, if an initial
+    request fails with a timeout error, retrying the same request in a minute will likely
+    result in success.
+    <br>
+    <br>
+    _A note on enumeration values and taxonomies_
+    <br>
+    Calligram currently limits the maximum depth of any taxonomy to three levels and the maximum
+    number of enumeration values to 96 (in any simple enumeration or in any one level of a taxonomy).
+    If an enumeration or taxonomy is passed that exceeds these limits, execution will terminate early
+    and a parameter value may not be parsed even if a parameter's presence is detected. In this case,
+    the Calligram API will return a warnings array to the user indicating that execution terminated
+    early.
 servers:
   - url: "https://y7xqsccv49.execute-api.us-west-1.amazonaws.com/production"
 paths:
   /map:
     post:
       summary: Map Parameters
-      description: Return a map of specified API parameter ids to extracted values from an arbitrary natural language query.
+      description: >-
+        Return a map of specified API parameter ids to extracted values from an arbitrary natural language query.
+
+        Please note that none of `###`, `==>`, `\n` (newline) may be present anywhere in the request body (neither in names nor descriptions nor values).
       operationId: postMapParametersRequest
       security:
         - api_key: []
@@ -41,6 +58,8 @@ paths:
                 $ref: "#/components/schemas/response400"
         "403":
           description: API key information is missing or invalid.
+        "429":
+          description: API rate limit (1 request/second) or quota (100 requests/day) exceeded.
         "5XX":
           description: Unexpected error.
       requestBody:
@@ -70,6 +89,15 @@ components:
         result:
           type: object
           description: The generated map of API parameter ids to values extracted from the natural language query.
+          example:
+            categories: Dining and Drinking
+        warnings:
+          type: array
+          description: A list of any warnings raised while executing the request.
+          items:
+            type: string
+          example:
+            - Execution terminated early because an enumeration/taxonomy level passed in the request body exceeded the maximum supported size of 96 values
     response400:
       type: object
       description: A map parameters endpoint 400 response.
@@ -81,6 +109,7 @@ components:
         message:
           type: string
           description: The error message.
+          example: request body object is missing 'parameters' key
     request:
       type: object
       description: A map parameters endpoint request.
@@ -88,9 +117,13 @@ components:
         query:
           description: A natural language query.
           type: string
-        description:
-          description: A natural language description of the endpoint for which parameters are being generated.
+          maxLength: 250
+          example: Find Mexican restaurants open now in Phoenix with a price range of $$$.
+        name:
+          description: A self-descriptive name for the endpoint for which parameters are being generated. 'name' should describe the type of data being returned by the request.
           type: string
+          maxLength: 25
+          example: yelp_businesses
         parameters:
           description: A list of API parameters to parse from the request.
           type: array
@@ -98,44 +131,64 @@ components:
             $ref: "#/components/schemas/parameter"
       required:
         - query
-        - description
+        - name
         - parameters
     parameter:
       type: object
       description: An API request parameter object.
       properties:
-        id:
+        name:
           type: string
-          description: The API parameter id.
+          description: The API parameter name.
+          maxLength: 25
+          example: categories
         description:
           type: string
           description: The API parameter description.
+          maxLength: 250
+          example: The category of businesses to return.
         example:
           type:
             - number
             - string
             - boolean
-          description: An example value of the API parameter.
+          description: An example value of the API parameter if it is not an enumerated value.
+          example: Restaurants
         requires:
           type: array
           description: A list of any other API parameters that must be parsed if this parameter is parsed.
           items:
             type: string
+          example:
+            - term
         excludes:
           type: array
           description: A list of any other API parameters that must not be parsed if this parameter is parsed.
           items:
             type: string
+          example:
+            - term
         values:
           type: array
-          description: In case an API parameter can only take on a set of values, the full enumeration of possible values. All enumeration values must be of the same type. If the enumeration values are simple types (not objects), `Map Parameters` will return one of the provided values. If the enumeration values are objects, `Map Parameters` will return the id of the selected enumeration value.
+          description: In case an API parameter is an enumerated value, the full enumeration of possible values. All enumeration values must be of the same type.
           items:
             oneOf:
               - $ref: "#/components/schemas/simpleEnumerationValue"
-              - $ref: "#/components/schemas/mappedEnumerationValue"
               - $ref: "#/components/schemas/taxonomicEnumerationValue"
+          maxItems: 96
+          example:
+            - Arts and Entertainment
+            - Business and Professional Services
+            - Community and Government
+            - Dining and Drinking
+            - Event
+            - Health and Medicine
+            - Landmarks and Outdoors
+            - Retail
+            - Sports and Recreation
+            - Travel and Transportation
       required:
-        - id
+        - name
         - description
     simpleEnumerationValue:
       type:
@@ -144,35 +197,24 @@ components:
         - boolean
         - "null"
       description: A valid simple enumeration value for an API parameter.
-    mappedEnumerationValue:
-      type: object
-      description: A valid mapped enumeration value for an API parameter.
-      properties:
-        id:
-          type: string
-          description: The id of the API parameter enumeration value.
-        description:
-          type: string
-          description: The API parameter enumeration value description .
-      required:
-        - id
-        - description
+      maxLength: 50
+      example: Retail
     taxonomicEnumerationValue:
       type: object
       description: A valid taxonomic enumeration value for an API parameter.
       properties:
-        id:
+        name:
           type: string
-          description: The id of the API parameter enumeration value.
-        description:
-          type: string
-          description: The API parameter enumeration value description. If id is self descriptive, description should have the same value.
+          description: The name of the API parameter enumeration value.
+          maxLength: 50
+          example: Mexican Restaurant
         parents:
           type: array
-          description: The ids of the parents enumeration values of the API parameter enumeration value.
+          description: The names of the parent enumeration values of this API parameter enumeration value.
           items:
             type: string
+          example:
+            - Restaurant
       required:
-        - id
-        - description
+        - name
         - parents
