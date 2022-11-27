@@ -37,9 +37,10 @@ print(
         response.status_code, time.time() - st
     )
 )
-print("response = {}".format(response.json()))
+data = response.json()
+print("response = {}".format(data))
 
-result = {k: v for (k, v) in response.json()["result"].items() if v is not None}
+result = data["result"]
 
 
 ################################
@@ -81,21 +82,38 @@ YELP_CATEGORY_TAXONOMY = [{"name": "Business", "parents": []}] + [
 
 YELP_URL: str = "https://api.yelp.com/v3/businesses/search"
 
+CONVERSIONS_TO_METERS: dict = {
+    "meters": 1,
+    "feet": 0.3048,
+    "kilometers": 1000,
+    "miles": 1609.34,
+}
+
 PRICE_TO_INT: dict = {"$": 1, "$$": 2, "$$$": 3, "$$$$": 4}
 
-if "price" in result:
-    result["price"] = PRICE_TO_INT[result["price"]]
+parameters = {
+    "term": result["search term"],
+    "location": result["location"],
+    "radius": None
+    if (result["search radius"] is None) or (result["search radius units"] is None)
+    else int(
+        result["search radius"] * CONVERSIONS_TO_METERS[result["search radius units"]]
+    ),
+    "categories": YELP_TITLES_TO_ALIASES[result["category"]]
+    if result["category"] != "Business"
+    else None,
+    "price": None
+    if result["price range"] is None
+    else str(PRICE_TO_INT[result["price range"]]),
+    "open now": result["open now"],
+}
 
-if "category" in result:
-    # NOTE: handle categorization of a business as the root "Business" category we
-    # added above which is required for Calligram taxonomies to work properly
-    if result["category"] == "Business":
-        result.pop("category")
-    else:
-        result["category"] = YELP_TITLES_TO_ALIASES[result["category"]]
+parameters = {k: v for (k, v) in parameters.items() if v is not None}
+
+print(f"Yelp Fusion API parameters = {parameters}")
 
 yelp_response = requests.get(
-    YELP_URL, headers={"Authorization": f"Bearer {YELP_API_KEY}"}, params=result
+    YELP_URL, headers={"Authorization": f"Bearer {YELP_API_KEY}"}, params=parameters
 )
 
 print(json.dumps(yelp_response.json(), indent=2))
