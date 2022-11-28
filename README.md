@@ -24,12 +24,12 @@ export YELP_API_KEY="YOUR_YELP_API_KEY"
 
 The script can then be run as follows
 ```bash
-./bin/run.py "YOUR_NATURAL_LANGUAGE_QUERY"
+./bin/yelp/run.py "YOUR_NATURAL_LANGUAGE_QUERY"
 ```
 
 For example, in order to find cheap coffee shops in NYC, you could run:
 ```bash
-./bin/run.py "Show coffee shops open now in NYC with a price range of \$."
+./bin/yelp/run.py "Show coffee shops open now in NYC with a price range of \$."
 ```
 NOTE: "$" must be escaped in the natural language query.
 

@@ -1,0 +1,58 @@
+{
+    "name": "hacker news posts",
+    "parameters": [
+        {
+            "name": "search query",
+            "description": "a full-text search query",
+            "example": "AI startups"
+        },
+        {
+            "name": "item type",
+            "description": "the type of news item",
+            "values": [
+                "story",
+                "comment",
+                "poll",
+                "pollopt",
+                "show_hn",
+                "ask_hn",
+                "front_page"
+            ]
+        },
+        {
+            "name": "author",
+            "description": "the author of the news item",
+            "example": "jnbh"
+        },
+        {
+            "name": "created after",
+            "description": "restricts search results to only items created after this datetime",
+            "example": "2022-01-01T00:00:00.000"
+        },
+        {
+            "name": "created before",
+            "description": "restricts search results to only items created before this datetime",
+            "example": "2022-01-01T00:00:00.000"
+        },
+        {
+            "name": "minimum points",
+            "description": "restricts search results to only items with more points than this amount",
+            "example": 5
+        },
+        {
+            "name": "maximum points",
+            "description": "restricts search results to only items with fewer points than this amount",
+            "example": 10
+        },
+        {
+            "name": "minimum comments",
+            "description": "restricts search results to only items with more comments than this amount",
+            "example": 5
+        },
+        {
+            "name": "maximum comments",
+            "description": "restricts search results to only items with fewer comments than this amount",
+            "example": 10
+        }
+    ]
+}

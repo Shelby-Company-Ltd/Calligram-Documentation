@@ -7,8 +7,9 @@ import requests
 
 
 YELP_REQUEST_TEMPLATE_FILE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "config",
+    "yelp",
     "yelp.json",
 )
 
@@ -48,8 +49,9 @@ result = data["result"]
 ################################
 
 YELP_CATEGORIES_FILE: str = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "config",
+    "yelp",
     "yelp_categories.json",
 )
 with open(YELP_CATEGORIES_FILE) as file:
@@ -100,7 +102,7 @@ parameters = {
         result["search radius"] * CONVERSIONS_TO_METERS[result["search radius units"]]
     ),
     "categories": YELP_TITLES_TO_ALIASES[result["category"]]
-    if result["category"] != "Business"
+    if (result["category"] is not None) and (result["category"] != "Business")
     else None,
     "price": None
     if result["price range"] is None
